@@ -4,31 +4,32 @@ grammar Bacon;
 package ninja.mattburgess.bacon;
 }
 
-prog:   statement*
-  | EOF
+prog:   statement* EOF
   ;
 
-
-expression :
-    Identifier |
-    transformation
-    // TODO | other stuff
-;
 
 statement : // TODO
   assignmentStatement |
   tableDefinition |
   rowDefinition |
-  colDefinition
+  colDefinition |
+  expression
   ;
+
+expression :
+    Identifier |
+    literal |
+    transformation
+    // TODO | other stuff
+;
 
 assignmentStatement : Identifier EQUAL expression; // TODO add to expression?
 
 implicitTableDefinition : tableDataDefinition+;
 
-explicitTableDefinition : metadataDefinition rowDefinition*;
+explicitTableDefinition : metadataDefinition rowDefinition implicitTableDefinition;
 
-tableDefinition : TABLE implicitTableDefinition | explicitTableDefinition;
+tableDefinition : TABLE (implicitTableDefinition | explicitTableDefinition);
 
 tableDataDefinition : LBRACK expression (COMMA expression)* RBRACK;
 
@@ -37,6 +38,15 @@ metadataDefinition : LBRACK expression COLON expression RBRACK;
 rowDefinition: ROW tableDataDefinition;
 
 colDefinition: COLUMN tableDataDefinition;
+
+literal
+    :   IntegerLiteral
+    |   FloatingPointLiteral
+    |   CharacterLiteral
+    |   StringLiteral
+    |   BooleanLiteral
+    |   'null'
+    ;
 
 // Transformation stuff
 transformation :

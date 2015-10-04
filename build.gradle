@@ -3,8 +3,6 @@ apply plugin: 'antlr'
 apply plugin: 'eclipse'
 apply plugin: 'idea'
 
-// Keep Java source compatibility at 1.6 unless you absolutely need 7+ features, as this will 
-// ensure maximum supportability and compatibility for your plugin.
 sourceCompatibility = JavaVersion.VERSION_1_7
 
 version = '0.1'
@@ -18,18 +16,17 @@ repositories {
 dependencies {
   antlr "org.antlr:antlr4:4.5" // use ANTLR version 4
   compile "org.antlr:antlr4:4.5" // use ANTLR version 4
-  //  testCompile 'junit:junit:4.10'
+  testCompile 'junit:junit:4.10'
 }
 
 
 generateGrammarSource {
   //outputDirectory = "${project.rootDir}/src/main/java" as File
 
-  maxHeapSize = "512m"
   arguments += ["-visitor", "-long-messages"]
 }
 
 
 task createGradleWrapper(type: Wrapper) {
-  gradleVersion = '2.6'
+  gradleVersion = '2.7'
 }
