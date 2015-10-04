@@ -20,11 +20,6 @@ dependencies {
 }
 
 
-generateGrammarSource {
-  arguments += ["-visitor", "-long-messages"]
-}
-
-
 task createGradleWrapper(type: Wrapper) {
   gradleVersion = '2.7'
 }

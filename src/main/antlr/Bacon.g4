@@ -18,10 +18,11 @@ statement : // TODO
 
 expression :
   qualifiedName
-   | Identifier
    | literal
    | transformation
    | tableDefinition
+   | rowDefinition
+   | colDefinition
     // TODO | other stuff
 ;
 
@@ -38,9 +39,9 @@ tableDataDefinition : LBRACK expression (COMMA expression)* RBRACK;
 
 metadataDefinition : LBRACK expression COLON expression RBRACK;
 
-rowDefinition: ROW tableDataDefinition;
+rowDefinition: ROW metadataDefinition? tableDataDefinition;
 
-colDefinition: COLUMN tableDataDefinition;
+colDefinition: COLUMN metadataDefinition? tableDataDefinition;
 
 qualifiedName
     :   Identifier ('.' Identifier)*
@@ -57,7 +58,7 @@ literal
 
 // Transformation stuff
 transformation :
-  (INPUT | Identifier) TRANSFORM expression
+  (INPUT | OUTPUT | Identifier) TRANSFORM expression
   ;
 
 // Use literals and other lexical stuff from Java
@@ -370,6 +371,7 @@ ROW             : 'row';
 COLUMN          : 'column';
 TABLE           : 'table';
 INPUT           : 'input';
+OUTPUT          : 'output';
 
 // §3.8 Identifiers (must appear after all keywords in the grammar)
 
