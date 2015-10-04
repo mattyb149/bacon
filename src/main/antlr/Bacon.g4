@@ -1,81 +1,404 @@
 grammar Bacon;
 
-prog:   stat*
-      | EOF
+@header {
+package ninja.mattburgess.bacon;
+}
+
+prog:   statement*
+  | EOF
+  ;
+
+
+expression :
+    Identifier |
+    transformation
+    // TODO | other stuff
+;
+
+statement : // TODO
+  assignmentStatement |
+  tableDefinition |
+  rowDefinition |
+  colDefinition
+  ;
+
+assignmentStatement : Identifier EQUAL expression; // TODO add to expression?
+
+implicitTableDefinition : tableDataDefinition+;
+
+explicitTableDefinition : metadataDefinition rowDefinition*;
+
+tableDefinition : TABLE implicitTableDefinition | explicitTableDefinition;
+
+tableDataDefinition : LBRACK expression (COMMA expression)* RBRACK;
+
+metadataDefinition : LBRACK expression COLON expression RBRACK;
+
+rowDefinition: ROW tableDataDefinition;
+
+colDefinition: COLUMN tableDataDefinition;
+
+// Transformation stuff
+transformation :
+  Identifier TRANSFORM expression
+  ;
+
+// Use literals and other lexical stuff from Java
+
+// §3.10.1 Integer Literals
+
+IntegerLiteral
+    :   DecimalIntegerLiteral
+    |   HexIntegerLiteral
+    |   OctalIntegerLiteral
+    |   BinaryIntegerLiteral
     ;
 
-stat : (identifier | quotedString) END_STAT*;
-block : START_BLOCK ( stat )* END_BLOCK NL* ;
-
-identifier : Identifier;
-
-quotedString : DQUOTE unquotedString DQUOTE ;
-unquotedString : CHAR*;
-
-START_BLOCK : '{' ;
-END_BLOCK : '}' ;
-
-START_HOP : '-[' ;
-END_HOP : ']->' ;
-
-HEX :   '0' ('x'|'X') HEXDIGIT+ [Ll]? ;
-
-INT :   DIGIT+ [Ll]? ;
-
 fragment
-HEXDIGIT : ('0'..'9'|'a'..'f'|'A'..'F') ;
-
-FLOAT:  DIGIT+ '.' DIGIT* EXP? [Ll]?
-    |   DIGIT+ EXP? [Ll]?
-    |   '.' DIGIT+ EXP? [Ll]?
-    ;
-fragment
-DIGIT:  '0'..'9' ;
-fragment
-EXP :   ('E' | 'e') ('+' | '-')? INT ;
-
-DQUOTE : '"' ;
-
-fragment
-ESC :   '\\' [abtnfrv"'\\]
-    |   UNICODE_ESCAPE
-    |   HEX_ESCAPE
-    |   OCTAL_ESCAPE
+DecimalIntegerLiteral
+    :   DecimalNumeral IntegerTypeSuffix?
     ;
 
 fragment
-UNICODE_ESCAPE
-    :   '\\' 'u' HEXDIGIT HEXDIGIT HEXDIGIT HEXDIGIT
-    |   '\\' 'u' '{' HEXDIGIT HEXDIGIT HEXDIGIT HEXDIGIT '}'
+HexIntegerLiteral
+    :   HexNumeral IntegerTypeSuffix?
     ;
 
 fragment
-OCTAL_ESCAPE
-    :   '\\' [0-3] [0-7] [0-7]
-    |   '\\' [0-7] [0-7]
-    |   '\\' [0-7]
+OctalIntegerLiteral
+    :   OctalNumeral IntegerTypeSuffix?
     ;
 
 fragment
-HEX_ESCAPE
-    :   '\\' HEXDIGIT HEXDIGIT?
+BinaryIntegerLiteral
+    :   BinaryNumeral IntegerTypeSuffix?
     ;
 
-Identifier : [a-zA-Z][a-zA-Z0-9_]* ;
+fragment
+IntegerTypeSuffix
+    :   [lL]
+    ;
 
-fragment LETTER  : [a-zA-Z] ;
+fragment
+DecimalNumeral
+    :   '0'
+    |   NonZeroDigit (Digits? | Underscores Digits)
+    ;
 
-CHAR :  '\u0000' .. '\u0009'
-     |  '\u000b' .. '\u000c'
-     |  '\u000e' .. '\u00021'
-     |  '\u0023' .. '\uffff'
-     ;
+fragment
+Digits
+    :   Digit (DigitOrUnderscore* Digit)?
+    ;
 
-COMMENT :   '#' .*? '\r'? '\n' -> type(NL) ;
+fragment
+Digit
+    :   '0'
+    |   NonZeroDigit
+    ;
 
-END_STAT : ';' ;
+fragment
+NonZeroDigit
+    :   [1-9]
+    ;
 
-// Match both UNIX and Windows newlines
-NL      :   '\r'? '\n' ;
+fragment
+DigitOrUnderscore
+    :   Digit
+    |   '_'
+    ;
 
-WS      :   [ \r\n\t\0x000c]+ -> skip ;
+fragment
+Underscores
+    :   '_'+
+    ;
+
+fragment
+HexNumeral
+    :   '0' [xX] HexDigits
+    ;
+
+fragment
+HexDigits
+    :   HexDigit (HexDigitOrUnderscore* HexDigit)?
+    ;
+
+fragment
+HexDigit
+    :   [0-9a-fA-F]
+    ;
+
+fragment
+HexDigitOrUnderscore
+    :   HexDigit
+    |   '_'
+    ;
+
+fragment
+OctalNumeral
+    :   '0' Underscores? OctalDigits
+    ;
+
+fragment
+OctalDigits
+    :   OctalDigit (OctalDigitOrUnderscore* OctalDigit)?
+    ;
+
+fragment
+OctalDigit
+    :   [0-7]
+    ;
+
+fragment
+OctalDigitOrUnderscore
+    :   OctalDigit
+    |   '_'
+    ;
+
+fragment
+BinaryNumeral
+    :   '0' [bB] BinaryDigits
+    ;
+
+fragment
+BinaryDigits
+    :   BinaryDigit (BinaryDigitOrUnderscore* BinaryDigit)?
+    ;
+
+fragment
+BinaryDigit
+    :   [01]
+    ;
+
+fragment
+BinaryDigitOrUnderscore
+    :   BinaryDigit
+    |   '_'
+    ;
+
+// §3.10.2 Floating-Point Literals
+
+FloatingPointLiteral
+    :   DecimalFloatingPointLiteral
+    |   HexadecimalFloatingPointLiteral
+    ;
+
+fragment
+DecimalFloatingPointLiteral
+    :   Digits '.' Digits? ExponentPart? FloatTypeSuffix?
+    |   '.' Digits ExponentPart? FloatTypeSuffix?
+    |   Digits ExponentPart FloatTypeSuffix?
+    |   Digits FloatTypeSuffix
+    ;
+
+fragment
+ExponentPart
+    :   ExponentIndicator SignedInteger
+    ;
+
+fragment
+ExponentIndicator
+    :   [eE]
+    ;
+
+fragment
+SignedInteger
+    :   Sign? Digits
+    ;
+
+fragment
+Sign
+    :   [+-]
+    ;
+
+fragment
+FloatTypeSuffix
+    :   [fFdD]
+    ;
+
+fragment
+HexadecimalFloatingPointLiteral
+    :   HexSignificand BinaryExponent FloatTypeSuffix?
+    ;
+
+fragment
+HexSignificand
+    :   HexNumeral '.'?
+    |   '0' [xX] HexDigits? '.' HexDigits
+    ;
+
+fragment
+BinaryExponent
+    :   BinaryExponentIndicator SignedInteger
+    ;
+
+fragment
+BinaryExponentIndicator
+    :   [pP]
+    ;
+
+// §3.10.3 Boolean Literals
+
+BooleanLiteral
+    :   'true'
+    |   'false'
+    ;
+
+// §3.10.4 Character Literals
+
+CharacterLiteral
+    :   '\'' SingleCharacter '\''
+    |   '\'' EscapeSequence '\''
+    ;
+
+fragment
+SingleCharacter
+    :   ~['\\]
+    ;
+// §3.10.5 String Literals
+StringLiteral
+    :   '"' StringCharacters? '"'
+    ;
+fragment
+StringCharacters
+    :   StringCharacter+
+    ;
+fragment
+StringCharacter
+    :   ~["\\]
+    |   EscapeSequence
+    ;
+// §3.10.6 Escape Sequences for Character and String Literals
+fragment
+EscapeSequence
+    :   '\\' [btnfr"'\\]
+    |   OctalEscape
+    |   UnicodeEscape
+    ;
+
+fragment
+OctalEscape
+    :   '\\' OctalDigit
+    |   '\\' OctalDigit OctalDigit
+    |   '\\' ZeroToThree OctalDigit OctalDigit
+    ;
+
+fragment
+UnicodeEscape
+    :   '\\' 'u' HexDigit HexDigit HexDigit HexDigit
+    ;
+
+fragment
+ZeroToThree
+    :   [0-3]
+    ;
+
+// §3.10.7 The Null Literal
+
+NullLiteral
+    :   'null'
+    ;
+
+// §3.11 Separators
+
+LPAREN          : '(';
+RPAREN          : ')';
+LBRACE          : '{';
+RBRACE          : '}';
+LBRACK          : '[';
+RBRACK          : ']';
+SEMI            : ';';
+COMMA           : ',';
+DOT             : '.';
+
+// §3.12 Operators
+
+ASSIGN          : '=';
+GT              : '>';
+LT              : '<';
+BANG            : '!';
+TILDE           : '~';
+QUESTION        : '?';
+COLON           : ':';
+EQUAL           : '==';
+LE              : '<=';
+GE              : '>=';
+NOTEQUAL        : '!=';
+AND             : '&&';
+OR              : '||';
+INC             : '++';
+DEC             : '--';
+ADD             : '+';
+SUB             : '-';
+MUL             : '*';
+DIV             : '/';
+BITAND          : '&';
+BITOR           : '|';
+CARET           : '^';
+MOD             : '%';
+
+ADD_ASSIGN      : '+=';
+SUB_ASSIGN      : '-=';
+MUL_ASSIGN      : '*=';
+DIV_ASSIGN      : '/=';
+AND_ASSIGN      : '&=';
+OR_ASSIGN       : '|=';
+XOR_ASSIGN      : '^=';
+MOD_ASSIGN      : '%=';
+LSHIFT_ASSIGN   : '<<=';
+RSHIFT_ASSIGN   : '>>=';
+URSHIFT_ASSIGN  : '>>>=';
+
+TRANSFORM       : '->';
+ROW             : 'row';
+COLUMN          : 'column';
+TABLE           : 'table';
+
+// §3.8 Identifiers (must appear after all keywords in the grammar)
+
+Identifier
+    :   JavaLetter JavaLetterOrDigit*
+    ;
+
+fragment
+JavaLetter
+    :   [a-zA-Z$_] // these are the "java letters" below 0xFF
+    |   // covers all characters above 0xFF which are not a surrogate
+        ~[\u0000-\u00FF\uD800-\uDBFF]
+        {Character.isJavaIdentifierStart(_input.LA(-1))}?
+    |   // covers UTF-16 surrogate pairs encodings for U+10000 to U+10FFFF
+        [\uD800-\uDBFF] [\uDC00-\uDFFF]
+        {Character.isJavaIdentifierStart(Character.toCodePoint((char)_input.LA(-2), (char)_input.LA(-1)))}?
+    ;
+
+fragment
+JavaLetterOrDigit
+    :   [a-zA-Z0-9$_] // these are the "java letters or digits" below 0xFF
+    |   // covers all characters above 0xFF which are not a surrogate
+        ~[\u0000-\u00FF\uD800-\uDBFF]
+        {Character.isJavaIdentifierPart(_input.LA(-1))}?
+    |   // covers UTF-16 surrogate pairs encodings for U+10000 to U+10FFFF
+        [\uD800-\uDBFF] [\uDC00-\uDFFF]
+        {Character.isJavaIdentifierPart(Character.toCodePoint((char)_input.LA(-2), (char)_input.LA(-1)))}?
+    ;
+
+//
+// Additional symbols not defined in the lexical specification
+//
+
+AT : '@';
+ELLIPSIS : '...';
+
+//
+// Whitespace and comments
+//
+
+WS  :  [ \t\r\n\u000C]+ -> skip
+    ;
+
+COMMENT
+    :   '/*' .*? '*/' -> skip
+    ;
+
+LINE_COMMENT
+    :   '//' ~[\r\n]* -> skip
+    ;

@@ -23,7 +23,7 @@ dependencies {
 
 
 generateGrammarSource {
-  outputDirectory = "${project.rootDir}/src/main/java" as File
+  //outputDirectory = "${project.rootDir}/src/main/java" as File
 
   maxHeapSize = "512m"
   arguments += ["-visitor", "-long-messages"]
