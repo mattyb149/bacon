@@ -21,8 +21,6 @@ dependencies {
 
 
 generateGrammarSource {
-  //outputDirectory = "${project.rootDir}/src/main/java" as File
-
   arguments += ["-visitor", "-long-messages"]
 }
 

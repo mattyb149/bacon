@@ -17,13 +17,16 @@ statement : // TODO
   ;
 
 expression :
-    Identifier |
-    literal |
-    transformation
+  qualifiedName
+   | Identifier
+   | literal
+   | transformation
+   | tableDefinition
     // TODO | other stuff
 ;
 
-assignmentStatement : Identifier EQUAL expression; // TODO add to expression?
+
+assignmentStatement : qualifiedName EQUAL expression; // TODO add to expression?
 
 implicitTableDefinition : tableDataDefinition+;
 
@@ -39,6 +42,10 @@ rowDefinition: ROW tableDataDefinition;
 
 colDefinition: COLUMN tableDataDefinition;
 
+qualifiedName
+    :   Identifier ('.' Identifier)*
+    ;
+
 literal
     :   IntegerLiteral
     |   FloatingPointLiteral
@@ -50,7 +57,7 @@ literal
 
 // Transformation stuff
 transformation :
-  Identifier TRANSFORM expression
+  (INPUT | Identifier) TRANSFORM expression
   ;
 
 // Use literals and other lexical stuff from Java
@@ -362,6 +369,7 @@ TRANSFORM       : '->';
 ROW             : 'row';
 COLUMN          : 'column';
 TABLE           : 'table';
+INPUT           : 'input';
 
 // §3.8 Identifiers (must appear after all keywords in the grammar)
 
